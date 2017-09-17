@@ -366,7 +366,7 @@ var arrayImagenes = new Array();
     	//var a=JSON.stringify(arrayImagenAux);
 
     	        $.ajax({
-    	        	url:   'ururl/crear',
+    	        	url:   'http://127.0.0.1:8000/crear',
     	        	type:  'post',
     	        	cache: 'false',
         			contentType: 'false',
