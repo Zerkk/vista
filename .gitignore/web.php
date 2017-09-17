@@ -35,4 +35,4 @@ Route::patch('almacen/producto/{id}', [
     'as'   => 'almacen.producto.update',
     'uses' => 'ProductoController@update',
 ]);
-Route::post('ururl/crear', 'ProductoController@store');
+Route::post('/crear', 'ProductoController@store');
