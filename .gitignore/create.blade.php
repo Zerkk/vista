@@ -368,7 +368,7 @@ var arrayImagenes = new Array();
 
     	        $.ajax({
     	        	url:   '/crear',
-    	        	type:  'get',
+    	        	type:  'post',
     	        	cache: 'false',
         			contentType: 'false',
         			processData: 'false',
