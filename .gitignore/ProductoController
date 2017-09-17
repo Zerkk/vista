@@ -1,0 +1,234 @@
+<?php
+
+namespace sistema\Http\Controllers;
+
+use DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Redirect;
+use sistema\CategoriaCatalogo;
+use sistema\ColorCatalogo;
+use sistema\Http\Requests\ProductoFormRequest;
+use sistema\Producto;
+use sistema\TallaCatalogo;
+
+class ProductoController extends Controller
+{
+    public function __construct()
+    {
+
+    }
+    public function index(Request $request)
+    {
+        if ($request) {
+            $query     = trim($request->get('searchText'));
+            $productos = DB::table('t_producto as a')
+                ->select('a.idt_producto', 'a.codigo', 'a.nombre', 'a.descripcion', 'a.stock')
+                ->where('a.nombre', 'LIKE', '%' . $query . '%')
+                ->where('a.estado', '=', '1')
+                ->orderBy('idt_producto', 'desc')
+                ->paginate(10);
+            //mandamos los catalogos con sus otras tablas
+            $catalogosCategoria = DB::table('t_catalogocategoria as b')->where('b.estado', '=', '1')->get();
+            $categorias         = DB::table('t_categoria as c')->where('c.estado', '=', '1')->get();
+            $catalogosColor     = DB::table('t_catalogocolor as d')->where('d.estado', '=', '1')->get();
+            $colores            = DB::table('t_color as e')->where('e.estado', '=', '1')->get();
+            $catalogosTalla     = DB::table('t_catalogotalla as f')->where('f.estado', '=', '1')->get();
+            $tallas             = DB::table('t_talla as g')->where('g.estado', '=', '1')->get();
+
+            return view('almacen.producto.index', ["productos" => $productos, "searchText" => $query, "catalogosCategoria" => $catalogosCategoria, "categorias" => $categorias, "catalogosColor" => $catalogosColor, "colores" => $colores, "catalogosTalla" => $catalogosTalla, "tallas" => $tallas]);
+        }
+
+    }
+    public function create()
+    {
+        $categorias = DB::table('t_categoria')->where('estado', '=', '1')->get();
+        $colores    = DB::table('t_color')->where('estado', '=', '1')->get();
+        $tallas     = DB::table('t_talla')->where('estado', '=', '1')->get();
+
+        return view("almacen.producto.create", ["categorias" => $categorias, "colores" => $colores, "tallas" => $tallas]);
+    }
+    public function store(ProductoFormRequest $request)
+    {
+        if ($request->ajax()) {
+
+            if (!(empty($request->nombre)) && !(empty($request->codigo)) && !(empty($request->descripcion))) {
+
+                # code...
+                $producto              = new Producto;
+                $producto->codigo      = $request->codigo;
+                $producto->nombre      = $request->nombre;
+                $producto->descripcion = $request->descripcion;
+                $producto->stock       = '0';
+
+                //ver repetidos
+                $Buscar = DB::table('t_producto')->get();
+                foreach ($Buscar as $key) {
+                    if ($key->codigo == $producto->codigo) {
+                        if ($key->estado == '0') {
+                            $Pro         = Producto::findOrFail($key->idt_producto);
+                            $Pro->estado = '1';
+                            $Pro->update();
+                            return Redirect::to('almacen/producto');
+                        } else {
+                            return Redirect::to('almacen/producto');
+                        }
+
+                    }
+                }
+
+                //cargarimagen
+                //      if (Input::hasFile('imagen')) {
+                //        $file=Input::file('imagen');
+                //        $file->move(public_path().'/imagenes/articulo',$file->getClientOriginalName());
+                //        $producto->imagen=$file->getClientOriginalName();
+                //     }
+                //guardar en base de datos
+                $producto->estado = '1';
+                $producto->save();
+
+                //Codigo para Las categorias
+                if (!(empty($request->arrayCategorias))) {
+//comprueba si llego un array Categorias
+                    $ArrayCategoriasDatos = $request->arrayCategorias; //asigna a una variable el arrayCategorias
+                    foreach ($ArrayCategoriasDatos as $arrayCatKey) {
+                        //recorre todo el array
+                        $BuscarCategorias = DB::table('t_categoria')->get(); //una consulta a la tabla categoria
+                        foreach ($BuscarCategorias as $CategoriaKey) {
+                            //recorre los datos de la consulta
+                            if ($CategoriaKey->nombre == $arrayCatKey) {
+                                //comprueba si el nombre de la tabla es igual a la pos del array
+                                # code...
+                                $BuscarProductos = DB::table('t_producto')->get(); //una consulta ala tabla producto
+                                foreach ($BuscarProductos as $Productokey) {
+                                    //recorre los datos de la consulta
+                                    if ($Productokey->codigo == $producto->codigo) {
+                                        //comprueba si el codigo de la tabla es igual al del producto ingresado
+                                        $categoriaCatalogo                            = new CategoriaCatalogo; //crea una fila en la tabla CatalogoCategoria
+                                        $categoriaCatalogo->estado                    = '1';
+                                        $categoriaCatalogo->t_categoria_idt_categoria = $CategoriaKey->idt_categoria;
+                                        $categoriaCatalogo->t_producto_idt_producto   = $Productokey->idt_producto;
+                                        $categoriaCatalogo->save();
+
+                                        # code...
+                                    }
+                                }
+                            }
+                            # code...
+                        }
+
+                    }
+                    # code...
+                }
+                //Codigo para Los colores
+                if (!(empty($request->arrayColores))) {
+//comprueba si llego un array Colores
+                    $ArrayColoresDatos = $request->arrayColores; //asigna a una variable el arrayCategorias
+                    foreach ($ArrayColoresDatos as $arrayColKey) {
+                        //recorre todo el array
+                        $BuscarColores = DB::table('t_color')->get(); //una consulta a la tabla categoria
+                        foreach ($BuscarColores as $ColorKey) {
+                            //recorre los datos de la consulta
+                            if ($ColorKey->nombre == $arrayColKey) {
+                                //comprueba si el nombre de la tabla es igual a la pos del array
+                                # code...
+                                $BuscarProductos = DB::table('t_producto')->get(); //una consulta ala tabla producto
+                                foreach ($BuscarProductos as $Productokey) {
+                                    //recorre los datos de la consulta
+                                    if ($Productokey->codigo == $producto->codigo) {
+                                        //comprueba si el codigo de la tabla es igual al del producto ingresado
+
+                                        $colorCatalogo                          = new ColorCatalogo; //crea una fila en la tabla CatalogoCategoria
+                                        $colorCatalogo->t_color_idt_color       = $ColorKey->idt_color;
+                                        $colorCatalogo->t_producto_idt_producto = $Productokey->idt_producto;
+                                        $colorCatalogo->estado                  = '1';
+                                        $colorCatalogo->save();
+
+                                        # code...
+                                    }
+                                }
+                            }
+                            # code...
+                        }
+
+                    }
+                    # code...
+                }
+                //Codigo para las tallas
+                if (!(empty($request->arrayTallas))) {
+//comprueba si llego un array Categorias
+                    $ArrayTallasDatos = $request->arrayTallas; //asigna a una variable el arrayCategorias
+                    foreach ($ArrayTallasDatos as $arrayTallKey) {
+                        //recorre todo el array
+                        $BuscarTallas = DB::table('t_talla')->get(); //una consulta a la tabla categoria
+                        foreach ($BuscarTallas as $TallaKey) {
+                            //recorre los datos de la consulta
+                            if ($TallaKey->nombre == $arrayTallKey) {
+                                //comprueba si el nombre de la tabla es igual a la pos del array
+                                # code...
+                                $BuscarProductos = DB::table('t_producto')->get(); //una consulta ala tabla producto
+                                foreach ($BuscarProductos as $Productokey) {
+                                    //recorre los datos de la consulta
+                                    if ($Productokey->codigo == $producto->codigo) {
+                                        //comprueba si el codigo de la tabla es igual al del producto ingresado
+                                        $tallaCatalogo                          = new TallaCatalogo; //crea una fila en la tabla CatalogoCategoria
+                                        $tallaCatalogo->t_talla_idt_talla       = $TallaKey->idt_talla;
+                                        $tallaCatalogo->t_producto_idt_producto = $Productokey->idt_producto;
+                                        $tallaCatalogo->estado                  = '1';
+                                        $tallaCatalogo->save();
+
+                                        # code...
+                                    }
+                                }
+                            }
+                            # code...
+                        }
+
+                    }
+                    # code...
+                }
+
+                // return Redirect::to('almacen/producto');
+
+            }
+            # code...
+        }
+
+    }
+    public function show($id)
+    {
+        return view("almacen.producto.show", ["producto" => Producto::findOrFail($id)]);
+    }
+    public function edit($id)
+    {
+        $producto   = Producto::findOrFail($id);
+        $categorias = DB::table('t_categoria')->where('estado', '=', '1')->get();
+        return view("almacen.producto.edit", ["producto" => $producto, "categorias" => $categorias]);
+
+    }
+    public function update(CategoriaFormRequest $request, $id)
+    {
+
+        $producto              = Producto::findOrFail($id);
+        $producto->codigo      = $request->get('codigo');
+        $producto->nombre      = $request->get('nombre');
+        $producto->descripcion = $request->get('descripcion');
+        $producto->stock       = $request->get('stock');
+        //cargarimagen
+        if (Input::hasFile('imagen')) {
+            $file = Input::file('imagen');
+            $file->move(public_path() . '/imagenes/prductos', $file->getClientOriginalName());
+            $producto->imagen = $file->getClientOriginalName();
+        }
+        $producto->update();
+        return Redirect::to('almacen/producto');
+    }
+    public function destroy($id)
+    {
+        $producto         = Producto::findOrFail($id);
+        $producto->estado = '0';
+        $producto->update();
+        return Redirect::to('almacen/producto');
+    }
+
+}
