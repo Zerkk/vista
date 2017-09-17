@@ -35,7 +35,7 @@ color:#EEEEEE;
 <div class="row">
 	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
 		<label for="codigo"> Nombre</label>
-		<input type="hidden" name="_token" value="{{ csrf_token() }}">
+
 		<input class="form-control" required value="{{old('nombre')}}" type="text" id="inNombre" name="nombre" placeholder="Nombre">
 	</div>
 	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
@@ -159,12 +159,13 @@ color:#EEEEEE;
 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
 <div>
 		<div class="form-group">
-			<a class="btn btn-primary " href="#" role="button" onclick="FuncionGuardar()" >Añadir</a>
+			<a class="btn btn-primary" onclick="FuncionGuardar()" role="button">Guardar</a>
 			<a class="btn btn-danger" href="javascript:window.history.back();" role="button">Cancelar</a>
 		</div>
 
 	</div>
 </div>
+
 <script type="text/javascript">
 
 var contCategorias=0;
@@ -366,8 +367,8 @@ var arrayImagenes = new Array();
     	//var a=JSON.stringify(arrayImagenAux);
 
     	        $.ajax({
-    	        	url:   'http://127.0.0.1:8000/crear',
-    	        	type:  'post',
+    	        	url:   '/crear',
+    	        	type:  'get',
     	        	cache: 'false',
         			contentType: 'false',
         			processData: 'false',
